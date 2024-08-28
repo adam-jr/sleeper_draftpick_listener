@@ -20,12 +20,28 @@ function handleDraftedPlayer(element) {
     const payload = {
         player_name: playerName,
         position: playerPosition,
+        drafted_by: teamName,
         pick: pick,
         round: round,
         price: pricePaid
     };
 
     // Make the POST request
+    fetch('http://localhost:4001/draft_pick', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+
     fetch('http://localhost:4000/api/sleeper/draftpick', {
         method: 'POST',
         headers: {
