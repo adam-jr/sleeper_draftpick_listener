@@ -1,4 +1,4 @@
-function handleDraftedPlayer(element) {
+function getDraftedPlayerFromElement(element) {
     const playerName = element.querySelector('.player-name')?.textContent.trim();
     const playerPosition = element.querySelector('.position')?.textContent.trim();
     const pricePaid = element.querySelector('.pick')?.textContent.trim();
@@ -7,26 +7,53 @@ function handleDraftedPlayer(element) {
     const teamElement = element.closest('.team-column');
     const teamName = teamElement ? teamElement.querySelector('.header-text')?.textContent.trim() : 'Unknown Team';
 
-    // Extract pick and round from your logic or add elements containing them
-    const pick = 1;  // Replace this with actual logic to determine the pick
-    const round = 1; // Replace this with actual logic to determine the round
-
-    console.log(`Player Drafted: ${playerName}`);
-    console.log(`Team: ${teamName}`);
-    console.log(`Position: ${playerPosition}`);
-    console.log(`Price Paid: ${pricePaid}`);
-
     // Construct the payload
-    const payload = {
+    return {
         player_name: playerName,
         position: playerPosition,
         drafted_by: teamName,
-        pick: pick,
-        round: round,
         price: pricePaid
     };
+}
 
-    // Make the POST request
+function sendDraftPicks(payloads) {
+    fetch('http://localhost:4001/draft_picks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payloads)
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Batch Success:', data);
+        })
+        .catch((error) => {
+            console.error('Batch Error:', error);
+        });
+}
+
+function processExistingDraftedPlayers() {
+    const elements = document.querySelectorAll('.drafted');
+    const payloads = [];
+
+    elements.forEach(element => {
+        const payload = getDraftedPlayerFromElement(element);
+        payloads.push(payload);
+    });
+
+    if (payloads.length > 0) {
+        sendDraftPicks(payloads);
+        return true; // Indicate that elements were found
+    }
+
+    return false; // Indicate that no elements were found
+}
+
+function handleNewDraftedPlayer(element) {
+    const payload = getDraftedPlayerFromElement(element);
+
+    // Send the payload for the newly added drafted player
     fetch('http://localhost:4001/draft_pick', {
         method: 'POST',
         headers: {
@@ -36,12 +63,13 @@ function handleDraftedPlayer(element) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('Success:', data);
+            console.log('New Player Success:', data);
         })
         .catch((error) => {
-            console.error('Error:', error);
+            console.error('New Player Error:', error);
         });
 
+    // Example of sending to another endpoint as well
     fetch('http://localhost:4000/api/sleeper/draftpick', {
         method: 'POST',
         headers: {
@@ -51,25 +79,23 @@ function handleDraftedPlayer(element) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('Success:', data);
+            console.log('New Player Success (Sleeper):', data);
         })
         .catch((error) => {
-            console.error('Error:', error);
+            console.error('New Player Error (Sleeper):', error);
         });
 }
 
-function waitForElement(selector) {
+function observeNewDraftedPlayers() {
     const observedElements = new Set();  // Set to store observed elements
 
-    const observer = new MutationObserver((mutations, observerInstance) => {
+    const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
             if (mutation.type === "childList") {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(element => {
-                    // Check if the element has already been logged
-                    if (!observedElements.has(element)) {
-                        handleDraftedPlayer(element);
-                        observedElements.add(element);  // Mark element as logged
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && node.matches('.drafted') && !observedElements.has(node)) {
+                        handleNewDraftedPlayer(node);
+                        observedElements.add(node);
                     }
                 });
             }
@@ -82,5 +108,16 @@ function waitForElement(selector) {
     });
 }
 
-// Replace '.drafted' with the class or selector for the drafted player cell
-waitForElement('.drafted');
+function retryUntilElementsFound() {
+    const intervalId = setInterval(() => {
+        const found = processExistingDraftedPlayers();
+
+        if (found) {
+            clearInterval(intervalId); // Stop retrying once elements are found
+            observeNewDraftedPlayers(); // Start observing for new elements
+        }
+    }, 500); // Retry every 500ms
+}
+
+// Start the retry mechanism on page load
+retryUntilElementsFound();
