@@ -87,24 +87,23 @@ function handleNewDraftedPlayer(element) {
 }
 
 function observeNewDraftedPlayers() {
-    const observedElements = new Set();  // Set to store observed elements
+    const observedElements = new Set(); // Set to store observed elements
 
     const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
-            if (mutation.type === "childList") {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1 && node.matches('.drafted') && !observedElements.has(node)) {
-                        handleNewDraftedPlayer(node);
-                        observedElements.add(node);
-                    }
-                });
-            }
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1 && node.classList.contains('drafted') && !observedElements.has(node)) {
+                    handleNewDraftedPlayer(node);
+                    observedElements.add(node);
+                }
+            });
         });
     });
 
+    // Start observing the entire document for changes
     observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true // Observe the entire subtree
     });
 }
 
@@ -121,3 +120,4 @@ function retryUntilElementsFound() {
 
 // Start the retry mechanism on page load
 retryUntilElementsFound();
+observeNewDraftedPlayers();
