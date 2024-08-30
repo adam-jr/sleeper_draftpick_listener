@@ -33,23 +33,6 @@ function sendDraftPicks(payloads) {
         });
 }
 
-function processExistingDraftedPlayers() {
-    const elements = document.querySelectorAll('.drafted');
-    const payloads = [];
-
-    elements.forEach(element => {
-        const payload = getDraftedPlayerFromElement(element);
-        payloads.push(payload);
-    });
-
-    if (payloads.length > 0) {
-        sendDraftPicks(payloads);
-        return true; // Indicate that elements were found
-    }
-
-    return false; // Indicate that no elements were found
-}
-
 function handleNewDraftedPlayer(element) {
     const payload = getDraftedPlayerFromElement(element);
 
@@ -86,17 +69,34 @@ function handleNewDraftedPlayer(element) {
         });
 }
 
-function observeNewDraftedPlayers() {
-    const observedElements = new Set(); // Set to store observed elements
+const observedElements = new Set(); // Set to store observed elements
 
+function processExistingDraftedPlayers() {
+    const elements = document.querySelectorAll('.drafted');
+    const payloads = [];
+
+    elements.forEach(element => {
+        const payload = getDraftedPlayerFromElement(element);
+        payloads.push(payload);
+        observedElements.add(element);
+    });
+
+    if (payloads.length > 0) {
+        sendDraftPicks(payloads);
+        return true; // Indicate that elements were found
+    }
+
+    return false; // Indicate that no elements were found
+}
+
+function observeNewDraftedPlayers() {
     const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1 && node.classList.contains('drafted') && !observedElements.has(node)) {
-                    handleNewDraftedPlayer(node);
-                    observedElements.add(node);
-                }
-            });
+        const draftPicks = document.querySelectorAll('.drafted')
+        draftPicks.forEach(node => {
+            if (!observedElements.has(node)) {
+                handleNewDraftedPlayer(node);
+                observedElements.add(node);
+            }
         });
     });
 
@@ -107,11 +107,15 @@ function observeNewDraftedPlayers() {
     });
 }
 
+
 function retryUntilElementsFound() {
+    let tries = 0
+
     const intervalId = setInterval(() => {
         const found = processExistingDraftedPlayers();
+        tries = tries + 1;
 
-        if (found) {
+        if (found || tries >= 5) {
             clearInterval(intervalId); // Stop retrying once elements are found
             observeNewDraftedPlayers(); // Start observing for new elements
         }
@@ -119,5 +123,5 @@ function retryUntilElementsFound() {
 }
 
 // Start the retry mechanism on page load
-retryUntilElementsFound();
-observeNewDraftedPlayers();
+retryUntilElementsFound(tries);
+
