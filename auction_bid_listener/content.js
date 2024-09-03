@@ -25,9 +25,6 @@ function handleBid(bidInfoElement) {
         const playerNameElement = playerInfoElement.closest('.left-component').querySelector('.headerText');
         const playerName = playerNameElement ? playerNameElement.innerText : 'Unknown Player';
 
-        // Log the details to the console
-        console.log(`Player: ${playerName}, Position: ${playerPosition}, Team: ${playerTeam}, Bid amount: ${bidAmount}`);
-
         // Prepare the payload for the POST request
         const payload = {
             player_name: playerName,
@@ -45,8 +42,8 @@ function handleBid(bidInfoElement) {
             body: JSON.stringify(payload)
         })
             .then(response => response.json())
-            .then(data => console.log('Success:', data))
-            .catch(error => console.error('Error:', error));
+        // .then(data => console.log('Success:', data))
+        // .catch(error => console.error('Error:', error));
     } else {
         console.log('Player details not found.');
     }
@@ -90,7 +87,6 @@ function observeBidInfo() {
         });
 
         // Log the initial bid details if the element is already on screen
-        console.log('observed!')
         handleBid(element);
     });
 

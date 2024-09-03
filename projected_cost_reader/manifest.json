@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "Projected Cost Reader",
+    "version": "0.1",
+    "description": "Scrapes projected costs from page",
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
+    "action": {}
+}

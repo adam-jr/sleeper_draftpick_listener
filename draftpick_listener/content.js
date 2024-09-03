@@ -26,11 +26,8 @@ function sendDraftPicks(payloads) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('Batch Success:', data);
+            // console.log('Batch Success:', data);
         })
-        .catch((error) => {
-            console.error('Batch Error:', error);
-        });
 }
 
 function handleNewDraftedPlayer(element) {
@@ -46,10 +43,10 @@ function handleNewDraftedPlayer(element) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('New Player Success:', data);
+            console.log('success 4001 draftpick:', data);
         })
         .catch((error) => {
-            console.error('New Player Error:', error);
+            console.error('4001 error:', error);
         });
 
     // Example of sending to another endpoint as well
@@ -62,10 +59,10 @@ function handleNewDraftedPlayer(element) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('New Player Success (Sleeper):', data);
+            console.log('success 4000 draftpick:', data);
         })
         .catch((error) => {
-            console.error('New Player Error (Sleeper):', error);
+            console.error('4000 error:', error);
         });
 }
 
@@ -123,5 +120,5 @@ function retryUntilElementsFound() {
 }
 
 // Start the retry mechanism on page load
-retryUntilElementsFound(tries);
+retryUntilElementsFound();
 
