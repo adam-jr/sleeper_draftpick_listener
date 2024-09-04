@@ -1,69 +1,40 @@
-function getDraftedPlayerFromElement(element) {
+const baseUrl = 'http://localhost:4001'
+const batchEndpoint = '/draftPicks'
+const draftPickEndpoint = '/draftPick'
+
+function extractDraftPick(element) {
     const playerName = element.querySelector('.player-name')?.textContent.trim();
-    const playerPosition = element.querySelector('.position')?.textContent.trim();
+    const positionAndTeamText = element.querySelector('.position')?.textContent.trim();
     const pricePaid = element.querySelector('.pick')?.textContent.trim();
 
     // Finding the team name by traversing up the DOM
     const teamElement = element.closest('.team-column');
-    const teamName = teamElement ? teamElement.querySelector('.header-text')?.textContent.trim() : 'Unknown Team';
+    const draftedBy = teamElement ? teamElement.querySelector('.header-text')?.textContent.trim() : 'Unknown Team';
+    const [playerPosition, playerTeam] = positionAndTeamText.split(' - ')
 
     // Construct the payload
     return {
-        player_name: playerName,
-        position: playerPosition,
-        drafted_by: teamName,
-        price: pricePaid
+        playerName,
+        playerPosition,
+        playerTeam,
+        draftedBy,
+        pricePaid
     };
 }
 
-function sendDraftPicks(payloads) {
-    fetch('http://localhost:4001/draft_picks', {
+function postRequest(url, endpoint, payload) {
+    console.log(payload)
+    fetch(new URL(url, endpoint), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payloads)
+        body: JSON.stringify(payload)
     })
         .then(response => response.json())
         .then(data => {
             // console.log('Batch Success:', data);
         })
-}
-
-function handleNewDraftedPlayer(element) {
-    const payload = getDraftedPlayerFromElement(element);
-
-    // Send the payload for the newly added drafted player
-    fetch('http://localhost:4001/draft_pick', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log('success 4001 draftpick:', data);
-        })
-        .catch((error) => {
-            console.error('4001 error:', error);
-        });
-
-    // Example of sending to another endpoint as well
-    fetch('http://localhost:4000/api/sleeper/draftpick', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log('success 4000 draftpick:', data);
-        })
-        .catch((error) => {
-            console.error('4000 error:', error);
-        });
 }
 
 const observedElements = new Set(); // Set to store observed elements
@@ -73,13 +44,13 @@ function processExistingDraftedPlayers() {
     const payloads = [];
 
     elements.forEach(element => {
-        const payload = getDraftedPlayerFromElement(element);
+        const payload = extractDraftPick(element);
         payloads.push(payload);
         observedElements.add(element);
     });
 
     if (payloads.length > 0) {
-        sendDraftPicks(payloads);
+        postRequest(baseUrl, batchEndpoint, payloads);
         return true; // Indicate that elements were found
     }
 
@@ -91,8 +62,9 @@ function observeNewDraftedPlayers() {
         const draftPicks = document.querySelectorAll('.drafted')
         draftPicks.forEach(node => {
             if (!observedElements.has(node)) {
-                handleNewDraftedPlayer(node);
                 observedElements.add(node);
+                const payload = extractDraftPick(node);
+                postRequest(baseUrl, draftPickEndpoint, payload)
             }
         });
     });
@@ -113,7 +85,7 @@ function retryUntilElementsFound() {
         tries = tries + 1;
 
         if (found || tries >= 5) {
-            clearInterval(intervalId); // Stop retrying once elements are found
+            clearInterval(intervalId); // Stop retrying once elements are found or tries = 5
             observeNewDraftedPlayers(); // Start observing for new elements
         }
     }, 500); // Retry every 500ms
